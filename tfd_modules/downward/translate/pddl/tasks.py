@@ -120,7 +120,7 @@ class Requirements(object):
         ":negative-preconditions", ":disjunctive-preconditions",
         ":existential-preconditions", ":universal-preconditions",
         ":quantified-preconditions", ":conditional-effects",
-        ":fluents", ":object-fluents", ":numeric-fluents", ":action-costs",
+        ":fluents", ":object-fluents", ":numeric-fluents", ":action-costs", ":timed-initial-literals",
         ":durative-actions", ":derived-predicates", ":duration-inequalities", ":modules", ":grounding-modules"), req
   def __str__(self):
     return ", ".join(self.requirements)

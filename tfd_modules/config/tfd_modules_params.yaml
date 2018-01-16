@@ -20,3 +20,6 @@ queue_management_mode: priority_based
 use_known_by_logical_state_only: false
 plan_name: plan
 monitoring_verify_timestamps: false
+
+#eps_scheduling_gap_time: 0.01
+#eps_time_comparison: 0.01
