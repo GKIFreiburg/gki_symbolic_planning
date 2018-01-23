@@ -25,9 +25,20 @@ def compile_away(predicates_, actions_, init_, goal_, timed_initials_):
   # add init
   init_.append(conditions.Atom('initial_state', []))
   disable_initial_state = '(at start (not (initial_state)))'
+  
+  merged_initials = {}
+  for ti in timed_initials_:
+    if not ti.time in merged_initials:
+      merged_initials[ti.time] = ti
+      if ti.fact[0] != 'and':
+        ti.fact = ['and', ti.fact]
+    else:
+      merged_initials[ti.time].fact.append(ti.fact)
+    #print(ti)
+  
   goal_list = []
   ti_actions = []
-  for i, ti in enumerate(timed_initials_):
+  for i, ti in enumerate(sorted(merged_initials.values(), key=lambda ti: ti.time)):
     name = 'timed_initial_{}__'.format(i)
     # add predicates
     scheduled_predicate = predicates.Predicate(name+'scheduled', [])
@@ -55,7 +66,7 @@ def compile_away(predicates_, actions_, init_, goal_, timed_initials_):
     disable_initial_state = ''
   # add goals
   goal_.parts += tuple(goal_list)
-  goal_.dump()
+  #goal_.dump()
   # add negated precontition to all other actions
   [at_start, overall, at_end] = conditions.parse_durative_condition(parser.parse_nested_list(['(at start (not (initial_state)))']))
   for da in actions_:
