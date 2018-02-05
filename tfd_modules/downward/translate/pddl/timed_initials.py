@@ -38,12 +38,13 @@ class TimedInitial(object):
 			self.value = True
 			self.symbol = self.fact[0]
 			self.args = self.fact[1:]
+		self.predicate = ' '.join([self.symbol]+self.args)
 
 	def create_initial_value(self, init_):
 		if self.type in {'BOOLEAN', 'NEGATED_BOOLEAN'}:
 			for other_fact in init_:
 				if type(other_fact) is conditions.Atom:
-					if self.symbol == other_fact.predicate and self.args == other_fact.args:
+					if self.symbol == other_fact.predicate and all(a==b.name for a, b in itertools.izip(self.args, other_fact.args[:-1])):
 						fact = [self.symbol]+self.args
 						return TimedInitial(0.0, fact)
 			fact = ['not', [self.symbol]+self.args]
@@ -51,21 +52,17 @@ class TimedInitial(object):
 		if self.type is 'NUMERICAL_FUNCTION':
 			for other_fact in init_:
 				if type(other_fact) is f_expression.Assign:
-					if other_fact.fluent:
+					if other_fact.fluent.symbol == self.symbol and all(a==b.name for a, b in itertools.izip(self.args, other_fact.fluent.args[:-1])):
 						fact = copy.deepcopy(self.fact)
-						fact[2] = other_fact.expression
+						fact[2] = other_fact.expression.value
 						return TimedInitial(0.0, fact)
 		if self.type is 'OBJECT_FUNCTION':
 			for other_fact in init_:
 				if type(other_fact) is conditions.Atom:
 					if '{}!val'.format(self.symbol) == other_fact.predicate:
-						print other_fact.predicate
-						print other_fact.args
-						print self.args
 						if all(a==b.name for a, b in itertools.izip(self.args, other_fact.args[:-1])):
 							fact = copy.deepcopy(self.fact)
 							fact[2] = other_fact.args[-1].name
-							print fact
 							return TimedInitial(0.0, fact)
 
 	def __str__(self):
@@ -94,10 +91,9 @@ def protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials
 	# find all predicates and fuctions and build value timeline
 	predicate_values = {} # {predicate: [ti1=TimedInitial(), ti2, ...]}
 	for ti in timed_initials_:
-		key = ' '.join([ti.symbol] + ti.args)
-		if key not in predicate_values:
-			predicate_values[key] = [ti.create_initial_value(init_)]
-		predicate_values[key].append(ti)
+		if ti.predicate not in predicate_values:
+			predicate_values[ti.predicate] = [ti.create_initial_value(init_)]
+		predicate_values[ti.predicate].append(ti)
 	
 	action_template = '''
   (:durative-action {name}protected
@@ -141,6 +137,17 @@ def protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials
 	actions_.extend(ti_actions)
 
 def schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_):
+	# find all predicates and fuctions and build value timeline
+	predicate_values = {} # {predicate: [ti1=TimedInitial(), ti2, ...]}
+	for ti in timed_initials_:
+		if ti.predicate not in predicate_values:
+			predicate_values[ti.predicate] = [ti.create_initial_value(init_)]
+		predicate_values[ti.predicate].append(ti)
+
+	for other_fact in init_:
+		if type(other_fact) is f_expression.Assign:
+			print other_fact.fluent, type(other_fact.fluent)
+
 	# add init
 	initial_state_predicate = predicates.Predicate('initial_state', [])
 	predicates_.append(initial_state_predicate)
@@ -170,19 +177,28 @@ def schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_
 		#fact_string =	effect_string_from_initial(ti.fact)
 		#fact_string =	effect_list_from_conjunction(ti.fact)
 		facts = []
+		previous_facts = []
 		for ti in tis:
 			facts.append('      (at end {})'.format(ti.to_effect()))
+			value_timeline = predicate_values[ti.predicate]
+			print value_timeline
+			previous_value = max((ti2 for ti2 in value_timeline if ti2.time < ti.time), key=lambda ti2: ti2.time)
+			print previous_value.time, previous_value.to_effect()
+			previous_facts.append('      (at end {})'.format(previous_value.to_effect()))
 		action_string = '''
   (:durative-action {name}scheduled
     :parameters ()
     :duration (= ?duration {time})
-    :condition (at start (initial_state))
+    :condition (and
+      (at start (initial_state))
+{previous_facts}
+    )
     :effect (and{disable_initial_state}
       (at end ({predicate}))
 {facts}
     )
   )'''.format(name=name, time=ti.time, predicate=scheduled_predicate.name,
-			disable_initial_state=disable_initial_state, facts='\n'.join(facts))
+			disable_initial_state=disable_initial_state, facts='\n'.join(facts), previous_facts='\n'.join(previous_facts))
 		print(action_string)
 		action = actions.DurativeAction.parse(parser.parse_nested_list([action_string]))
 		ti_actions.append(action)
