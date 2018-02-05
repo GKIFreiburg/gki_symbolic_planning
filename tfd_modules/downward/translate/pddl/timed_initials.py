@@ -94,7 +94,7 @@ def protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials
 	# find all predicates and fuctions and build value timeline
 	predicate_values = {} # {predicate: [ti1=TimedInitial(), ti2, ...]}
 	for ti in timed_initials_:
-		key = ' '.join([ti.symbol] + ti.args) # regular fact
+		key = ' '.join([ti.symbol] + ti.args)
 		if key not in predicate_values:
 			predicate_values[key] = [ti.create_initial_value(init_)]
 		predicate_values[key].append(ti)
@@ -119,7 +119,7 @@ def protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials
 		for ti0, ti1 in pairwise(tis): # [ti1=TimedInitial(), ti2, ...]
 			name = 'timed_initial_{}__'.format(next(counter))
 			# add predicates
-			protected_predicate = predicates.Predicate(name+'protected', [])
+			protected_predicate = predicates.Predicate(name+'-done', [])
 			predicates_.append(protected_predicate)
 			# add goal
 			goal_list.append(conditions.Atom(protected_predicate.name, []))
@@ -129,10 +129,22 @@ def protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials
 			action_string = action_template.format(name=name, duration=duration, 
 				previous_value=previous_value, next_value=next_value, protected_predicate=protected_predicate.name)
 			print(action_string)
-	return goal_list, ti_actions
+			action = actions.DurativeAction.parse(parser.parse_nested_list([action_string]))
+			ti_actions.append(action)
+	# add goals
+	goal_.parts += tuple(goal_list)
+	goal_.dump()
+	# add negated precontition to all other actions
+	#[at_start, overall, at_end] = conditions.parse_durative_condition(parser.parse_nested_list(['(at start (not (initial_state)))']))
+	#for da in actions_:
+	#	da.condition[0].parts += (at_start, )
+	actions_.extend(ti_actions)
 
 def schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_):
 	# add init
+	initial_state_predicate = predicates.Predicate('initial_state', [])
+	predicates_.append(initial_state_predicate)
+
 	init_.append(conditions.Atom('initial_state', []))
 	disable_initial_state = '\n      (at start (not (initial_state)))'
 	
@@ -150,7 +162,7 @@ def schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_
 	for tis in sorted(merged_initials.values(), key=lambda tis: tis[0].time):
 		name = 'timed_initial_{}__'.format(next(counter))
 		# add predicates
-		scheduled_predicate = predicates.Predicate(name+'scheduled', [])
+		scheduled_predicate = predicates.Predicate(name+'-scheduled', [])
 		predicates_.append(scheduled_predicate)
 		# add goal
 		goal_list.append(conditions.Atom(scheduled_predicate.name, []))
@@ -175,27 +187,19 @@ def schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_
 		action = actions.DurativeAction.parse(parser.parse_nested_list([action_string]))
 		ti_actions.append(action)
 		disable_initial_state = ''
-	return goal_list, ti_actions
-
-def compile_away(predicates_, actions_, init_, goal_, timed_initials_):
-	initial_state_predicate = predicates.Predicate('initial_state', [])
-	predicates_.append(initial_state_predicate)
-	
-	protect_goals, protect_actions = protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials_)
-	schedule_goals = []
-	schedule_actions = []
-	#schedule_goals, schedule_actions = schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_)
-	
-	
 	# add goals
-	goal_.parts += tuple(protect_goals + schedule_goals)
-	#goal_.dump()
+	goal_.parts += tuple(goal_list)
+	goal_.dump()
 	# add negated precontition to all other actions
 	[at_start, overall, at_end] = conditions.parse_durative_condition(parser.parse_nested_list(['(at start (not (initial_state)))']))
 	for da in actions_:
 		da.condition[0].parts += (at_start, )
-	actions_.extend(protect_actions)
-	actions_.extend(schedule_actions)
+	actions_.extend(ti_actions)
+
+def compile_away(predicates_, actions_, init_, goal_, timed_initials_):
+	
+	#protect_timed_predicates(predicates_, actions_, init_, goal_, timed_initials_)
+	schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_)
 	
 def effect_list_from_conjunction(fact_list):
 	facts = []
