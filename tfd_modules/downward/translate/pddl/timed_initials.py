@@ -173,9 +173,8 @@ def schedule_timed_initials(predicates_, actions_, init_, goal_, timed_initials_
 		predicates_.append(scheduled_predicate)
 		# add goal
 		goal_list.append(conditions.Atom(scheduled_predicate.name, []))
+
 		# add action
-		#fact_string =	effect_string_from_initial(ti.fact)
-		#fact_string =	effect_list_from_conjunction(ti.fact)
 		facts = []
 		previous_facts = []
 		for ti in tis:
