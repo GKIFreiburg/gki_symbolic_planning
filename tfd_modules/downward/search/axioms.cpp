@@ -14,7 +14,7 @@ LogicAxiom::LogicAxiom(istream &in)
     int cond_count;
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        prevail.push_back(Prevail(in));
+        prevail.push_back(Condition(in));
     in >> affected_variable >> old_value >> new_value;
     check_magic(in, "end_rule");
 }
@@ -106,9 +106,9 @@ AxiomEvaluator::AxiomEvaluator()
             for(int i = 0; i < axioms_by_layer[layer].size(); i++, sum_of_indices++) {
                 LogicAxiom *axiom =
                     static_cast<LogicAxiom*>(axioms_by_layer[layer][i]);
-                const vector<Prevail> &conditions = axiom->prevail;
+                const vector<Condition> &conditions = axiom->prevail;
                 for(int j = 0; j < conditions.size(); j++) {
-                    const Prevail &cond = conditions[j];
+                    const Condition &cond = conditions[j];
                     axiom_literals[cond.var][static_cast<int>(cond.prev)].condition_of.push_back(
                         &rules[sum_of_indices]);
                 }

@@ -154,9 +154,9 @@ public:
 	/// mutually exclusive with forall goals.
 	void setStringGoalStatement(string goalStatement);
 
-	void addFutureEvent(const FutureEvent::ConstPtr& event);
-	void removeFutureEvent(const FutureEvent::ConstPtr& event);
-	void applyTriggeredEvent(const FutureEvent::ConstPtr& event);
+	void addFutureEvent(FutureEvent::Ptr& event);
+	void removeFutureEvent(const FutureEvent::Ptr& event);
+	void applyTriggeredEvent(const FutureEvent::Ptr& event);
 	void updateFutureEvents();
 
 	/// Determine if this state has the given predicate.
@@ -228,7 +228,7 @@ protected:
 	ForEachGoalStatements _forEachGoalStatements;
 	string _directGoalStatement;
 
-	set<FutureEvent::ConstPtr> _expectedFutureEvents;
+	set<FutureEvent::Ptr> _expectedFutureEvents;
 };
 
 std::ostream & operator<<(std::ostream & os, const SymbolicState & ss);

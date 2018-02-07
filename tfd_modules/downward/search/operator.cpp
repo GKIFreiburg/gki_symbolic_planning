@@ -9,12 +9,12 @@
 #include <iostream>
 using namespace std;
 
-Prevail::Prevail(istream &in)
+Condition::Condition(istream &in)
 {
     in >> var >> prev;
 }
 
-bool Prevail::is_applicable(const TimeStampedState &state, const Operator* op, bool allowRelaxed) const
+bool Condition::is_applicable(const TimeStampedState &state, const Operator* op, bool allowRelaxed) const
 {
     assert(var >= 0 && var < g_variable_name.size());
     assert((prev >= 0 && prev < g_variable_domain[var]) || (g_variable_types[var] == module));
@@ -33,18 +33,18 @@ bool Prevail::is_applicable(const TimeStampedState &state, const Operator* op, b
     }
 }
 
-PrePost::PrePost(istream &in)
+Effect::Effect(istream &in)
 {
     int cond_count;
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        cond_start.push_back(Prevail(in));
+        cond_start.push_back(Condition(in));
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        cond_overall.push_back(Prevail(in));
+        cond_overall.push_back(Condition(in));
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        cond_end.push_back(Prevail(in));
+        cond_end.push_back(Condition(in));
     in >> var;
     if(is_functional(var)) {
         in >> fop >> var_post;
@@ -65,13 +65,13 @@ ModuleEffect::ModuleEffect(istream &in)
     int cond_count;
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        cond_start.push_back(Prevail(in));
+        cond_start.push_back(Condition(in));
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        cond_overall.push_back(Prevail(in));
+        cond_overall.push_back(Condition(in));
     in >> cond_count;
     for(int i = 0; i < cond_count; i++)
-        cond_end.push_back(Prevail(in));
+        cond_end.push_back(Condition(in));
     string name;
     in >> name;
     name = name.substr(3);
@@ -93,14 +93,14 @@ void ModuleGrounding::dump() const
     module->dump();
 }
 
-bool PrePost::is_applicable(const TimeStampedState &state) const
+bool Effect::is_applicable(const TimeStampedState &state) const
 {
     assert(var >= 0 && var < g_variable_name.size());
     assert(pre == -1 || (pre >= 0 && pre < g_variable_domain[var]));
     return pre == -1 || (state_equals(state[var], pre));
 }
 
-void Operator::sort_prevails(vector<Prevail> &prevails)
+void Operator::sort_prevails(vector<Condition> &prevails)
 {
     int swapIndex = prevails.size() - 1;
     for(int i = 0; i <= swapIndex; ++i) {
@@ -134,25 +134,25 @@ Operator::Operator(istream &in) : grounding_parent(NULL)
 
     in >> count; //number of prevail at-start conditions
     for(int i = 0; i < count; i++)
-        prevail_start.push_back(Prevail(in));
+        prevail_start.push_back(Condition(in));
     in >> count; //number of prevail overall conditions
     for(int i = 0; i < count; i++)
-        prevail_overall.push_back(Prevail(in));
+        prevail_overall.push_back(Condition(in));
     in >> count; //number of prevail at-end conditions
     for(int i = 0; i < count; i++)
-        prevail_end.push_back(Prevail(in));
+        prevail_end.push_back(Condition(in));
     in >> count; //number of pre_post_start conditions (symbolical)
     for(int i = 0; i < count; i++)
-        pre_post_start.push_back(PrePost(in));
+        pre_post_start.push_back(Effect(in));
     in >> count; //number of pre_post_end conditions (symbolical)
     for(int i = 0; i < count; i++)
-        pre_post_end.push_back(PrePost(in));
+        pre_post_end.push_back(Effect(in));
     in >> count; //number of pre_post_start conditions (functional)
     for(int i = 0; i < count; i++)
-        pre_post_start.push_back(PrePost(in));
+        pre_post_start.push_back(Effect(in));
     in >> count; //number of pre_post_end conditions (functional)
     for(int i = 0; i < count; i++)
-        pre_post_end.push_back(PrePost(in));
+        pre_post_end.push_back(Effect(in));
 
     // sort prevails such that conditions on module variables come last
     sort_prevails(prevail_start);
@@ -170,15 +170,17 @@ Operator::Operator(istream &in) : grounding_parent(NULL)
     check_magic(in, "end_operator");
 
     numBranches = 0;
+
+    dump();
 }
 
 Operator::Operator(bool uses_concrete_time_information) : grounding_parent(NULL)
 {
-    prevail_start   = vector<Prevail>();
-    prevail_overall = vector<Prevail>();
-    prevail_end     = vector<Prevail>();
-    pre_post_start  = vector<PrePost>();
-    pre_post_end    = vector<PrePost>();
+    prevail_start   = vector<Condition>();
+    prevail_overall = vector<Condition>();
+    prevail_end     = vector<Condition>();
+    pre_post_start  = vector<Effect>();
+    pre_post_end    = vector<Effect>();
     if(!uses_concrete_time_information) {
         name = "let_time_pass";
         duration_var = -1;
@@ -320,12 +322,12 @@ void Operator::addGroundParameters(modules::ParameterList & parameters) const
 }
 
 
-void Prevail::dump() const
+void Condition::dump() const
 {
     cout << g_variable_name[var] << ": " << prev << endl;
 }
 
-void PrePost::dump() const
+void Effect::dump() const
 {
     cout << "var: " << g_variable_name[var] << ", pre: " << pre
         << " , var_post: " << var_post << ", post: " << post << endl;
@@ -343,23 +345,23 @@ void Operator::dump() const
             mod_groundings[i].dump();
         }
     }
-    cout << "Prevails start:" << endl;
+    cout << "Conditions start:" << endl;
     for(int i = 0; i < prevail_start.size(); ++i) {
         prevail_start[i].dump();
     }
-    cout << "Prevails overall:" << endl;
+    cout << "Conditions overall:" << endl;
     for(int i = 0; i < prevail_overall.size(); ++i) {
         prevail_overall[i].dump();
     }
-    cout << "Prevails end:" << endl;
+    cout << "Conditions end:" << endl;
     for(int i = 0; i < prevail_end.size(); ++i) {
         prevail_end[i].dump();
     }
-    cout << "Preposts start:" << endl;
+    cout << "Effects start:" << endl;
     for(int i = 0; i < pre_post_start.size(); ++i) {
         pre_post_start[i].dump();
     }
-    cout << "Preposts end:" << endl;
+    cout << "Effects end:" << endl;
     for(int i = 0; i < pre_post_end.size(); ++i) {
         pre_post_end[i].dump();
     }
@@ -483,8 +485,8 @@ bool Operator::enables(const Operator* other) const
     return false;
 }
 
-bool Operator::achievesPrecond(const vector<PrePost>& effects, const vector<
-        Prevail>& conds) const
+bool Operator::achievesPrecond(const vector<Effect>& effects, const vector<
+        Condition>& conds) const
 {
     for(int i = 0; i < effects.size(); ++i) {
         for(int j = 0; j < conds.size(); ++j) {
@@ -497,8 +499,8 @@ bool Operator::achievesPrecond(const vector<PrePost>& effects, const vector<
     return false;
 }
 
-bool Operator::achievesPrecond(const vector<PrePost>& effs1, const vector<
-        PrePost>& effs2) const
+bool Operator::achievesPrecond(const vector<Effect>& effs1, const vector<
+        Effect>& effs2) const
 {
     for(int i = 0; i < effs1.size(); ++i) {
         for(int j = 0; j < effs2.size(); ++j) {
@@ -512,8 +514,8 @@ bool Operator::achievesPrecond(const vector<PrePost>& effs1, const vector<
 }
 
 //FIXME: numerical effects?? conditional effects?? axioms??
-bool Operator::deletesPrecond(const vector<Prevail>& conds, const vector<
-        PrePost>& effects) const
+bool Operator::deletesPrecond(const vector<Condition>& conds, const vector<
+        Effect>& effects) const
 {
     for(int i = 0; i < conds.size(); ++i) {
         for(int j = 0; j < effects.size(); ++j) {
@@ -526,8 +528,8 @@ bool Operator::deletesPrecond(const vector<Prevail>& conds, const vector<
     return false;
 }
 
-bool Operator::deletesPrecond(const vector<PrePost>& effs1, const vector<
-        PrePost>& effs2) const
+bool Operator::deletesPrecond(const vector<Effect>& effs1, const vector<
+        Effect>& effs2) const
 {
     for(int i = 0; i < effs1.size(); ++i) {
         for(int j = 0; j < effs2.size(); ++j) {
@@ -543,8 +545,8 @@ bool Operator::deletesPrecond(const vector<PrePost>& effs1, const vector<
     return false;
 }
 
-bool Operator::writesOnSameVar(const vector<PrePost>& effs1, const vector<
-        PrePost>& effs2) const
+bool Operator::writesOnSameVar(const vector<Effect>& effs1, const vector<
+        Effect>& effs2) const
 {
     for(int i = 0; i < effs1.size(); ++i) {
         for(int j = 0; j < effs2.size(); ++j) {

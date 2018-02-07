@@ -213,7 +213,7 @@ void DomainTransitionGraphSymb::read_data(istream &in)
             if(the_operator) {
                 //	       cout << "Processing operator " << the_operator->get_name() << endl;
 
-                vector<PrePost> pre_post;
+                vector<Effect> pre_post;
                 compress_effects(the_operator, pre_post);
 
                 sort(precond_pairs.begin(), precond_pairs.end());
@@ -244,7 +244,7 @@ void DomainTransitionGraphSymb::read_data(istream &in)
     check_magic(in, "end_DTG");
 }
 
-void DomainTransitionGraphSymb::extend_cyclic_effect(const PrePost& pre_post, vector<LocalAssignment>& cyclic_effect,
+void DomainTransitionGraphSymb::extend_cyclic_effect(const Effect& pre_post, vector<LocalAssignment>& cyclic_effect,
         map<int, int> &global_to_ccg_parent, const vector<pair<int, int> >& precond_pairs)
 {
     int var_no = pre_post.var;
@@ -257,7 +257,7 @@ void DomainTransitionGraphSymb::extend_cyclic_effect(const PrePost& pre_post, ve
     if(pre != -1)
         triggercond_pairs.push_back(make_pair(var_no, static_cast<int>(pre)));
 
-    vector<Prevail> cond;
+    vector<Condition> cond;
     for(int f = 0; f < pre_post.cond_start.size(); ++f) {
         cond.push_back(pre_post.cond_start[f]);
     }
@@ -318,10 +318,10 @@ bool DomainTransitionGraphSymb::add_relevant_functional_vars_to_context(int var_
     return var_influences_important_comp_var;
 }
 
-void DomainTransitionGraphSymb::compress_effects(const Operator* op, vector<PrePost>& pre_post)
+void DomainTransitionGraphSymb::compress_effects(const Operator* op, vector<Effect>& pre_post)
 {
-    const vector<PrePost> &pre_post_start = op->get_pre_post_start();
-    const vector<PrePost> &pre_post_end = op->get_pre_post_end();
+    const vector<Effect> &pre_post_start = op->get_effects_start();
+    const vector<Effect> &pre_post_end = op->get_effects_end();
     for(int k = 0; k < pre_post_start.size(); ++k) {
         pre_post.push_back(pre_post_start[k]);
     }

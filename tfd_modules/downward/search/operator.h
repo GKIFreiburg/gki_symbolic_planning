@@ -16,11 +16,11 @@
 class Operator
 {
     private:
-        vector<Prevail> prevail_start; // var, val
-        vector<Prevail> prevail_overall; // var, val
-        vector<Prevail> prevail_end; // var, val
-        vector<PrePost> pre_post_start; // var, old-val, new-val
-        vector<PrePost> pre_post_end; // var, old-val, new-val
+        vector<Condition> prevail_start; // var, val
+        vector<Condition> prevail_overall; // var, val
+        vector<Condition> prevail_end; // var, val
+        vector<Effect> pre_post_start; // var, old-val, new-val
+        vector<Effect> pre_post_end; // var, old-val, new-val
         vector<ModuleEffect> mod_effs_start;
         vector<ModuleEffect> mod_effs_end;
         vector<ModuleGrounding> mod_groundings;
@@ -37,37 +37,37 @@ class Operator
         mutable BranchGroundingCountMap numBranchesByState;
 
     private:
-        bool deletesPrecond(const vector<Prevail>& conds,
-                const vector<PrePost>& effects) const;
-        bool deletesPrecond(const vector<PrePost>& effs1,
-                const vector<PrePost>& effs2) const;
-        bool achievesPrecond(const vector<PrePost>& effects, const vector<
-                Prevail>& conds) const;
-        bool achievesPrecond(const vector<PrePost>& effs1,
-                const vector<PrePost>& effs2) const;
-        bool writesOnSameVar(const vector<PrePost>& conds,
-                const vector<PrePost>& effects) const;
+        bool deletesPrecond(const vector<Condition>& conds,
+                const vector<Effect>& effects) const;
+        bool deletesPrecond(const vector<Effect>& effs1,
+                const vector<Effect>& effs2) const;
+        bool achievesPrecond(const vector<Effect>& effects, const vector<
+                Condition>& conds) const;
+        bool achievesPrecond(const vector<Effect>& effs1,
+                const vector<Effect>& effs2) const;
+        bool writesOnSameVar(const vector<Effect>& conds,
+                const vector<Effect>& effects) const;
 
-        void sort_prevails(vector<Prevail> &prevails);
+        void sort_prevails(vector<Condition> &prevails);
     public:
         Operator(std::istream &in);
         explicit Operator(bool uses_concrete_time_information);
 
         void dump() const;
 
-        const vector<Prevail> &get_prevail_start() const {
+        const vector<Condition> &get_conditions_start() const {
             return prevail_start;
         }
-        const vector<Prevail> &get_prevail_overall() const {
+        const vector<Condition> &get_conditions_overall() const {
             return prevail_overall;
         }
-        const vector<Prevail> &get_prevail_end() const {
+        const vector<Condition> &get_conditions_end() const {
             return prevail_end;
         }
-        const vector<PrePost> &get_pre_post_start() const {
+        const vector<Effect> &get_effects_start() const {
             return pre_post_start;
         }
-        const vector<PrePost> &get_pre_post_end() const {
+        const vector<Effect> &get_effects_end() const {
             return pre_post_end;
         }
         const vector<ModuleEffect> &get_mod_effs_start() const {

@@ -31,10 +31,10 @@ struct InstantPlanStep
         std::set<int> precondition_vars;
         std::set<int> effect_vars;
 
-        std::vector<Prevail> preconditions;
+        std::vector<Condition> preconditions;
         std::set<int> effect_cond_vars;
-        std::vector<PrePost> effects;
-        std::vector<Prevail> overall_conds;
+        std::vector<Effect> effects;
+        std::vector<Condition> overall_conds;
 
         //    void addCondVars(std::set<int>& effect_cond_vars,
         //            const std::vector<Prevail>& conds) {
@@ -155,13 +155,13 @@ class PartialOrderLifter
         void findTriggeringEffects(
                 const TimeStampedState* stateBeforeHappening,
                 const TimeStampedState* stateAfterHappening,
-                vector<PrePost>& las);
+                vector<Effect>& las);
         void findTriggeringEffectsForInitialState(
-                const TimeStampedState* tsstate, vector<PrePost>& effects);
+                const TimeStampedState* tsstate, vector<Effect>& effects);
         void findAllEffectCondVars(const ScheduledOperator& new_op,
                 set<int>& effect_cond_vars, ActionType type);
         void findPreconditions(const ScheduledOperator& new_op,
-                vector<Prevail>& preconditions, ActionType type);
+                vector<Condition>& preconditions, ActionType type);
         //      todo();
 
         int getIndexOfPlanStep(const ScheduledOperator& op, double timestamp);

@@ -164,9 +164,9 @@ class DomainTransitionGraphSymb : public DomainTransitionGraph
         // Build vector of values v' such that there is a transition from value to v'.
 
     private:
-        void compress_effects(const Operator* op, vector<PrePost>& pre_post);
+        void compress_effects(const Operator* op, vector<Effect>& pre_post);
         bool add_relevant_functional_vars_to_context(int var_no, map<int, int> &global_to_ccg_parent);
-        void extend_cyclic_effect(const PrePost& pre_post, vector<LocalAssignment>& cyclic_effect,
+        void extend_cyclic_effect(const Effect& pre_post, vector<LocalAssignment>& cyclic_effect,
             map<int, int> &global_to_ccg_parent, const vector<pair<int, int> >& precond_pairs);
         DomainTransitionGraphSymb(const DomainTransitionGraphSymb &other); // copying forbidden
 };

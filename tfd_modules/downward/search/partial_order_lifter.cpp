@@ -174,7 +174,7 @@ Plan PartialOrderLifter::lift()
 
 void PartialOrderLifter::buildPartialOrder()
 {
-    std::vector<std::vector<Prevail> > primary_add;
+    std::vector<std::vector<Condition> > primary_add;
     primary_add.resize(instant_plan.size());
 
     for (int i = instant_plan.size() - 1; i >= 0; --i) {
@@ -328,14 +328,14 @@ void PartialOrderLifter::dumpOrdering()
 
 void PartialOrderLifter::findTriggeringEffects(
         const TimeStampedState* stateBeforeHappening,
-        const TimeStampedState* stateAfterHappening, vector<PrePost>& effects)
+        const TimeStampedState* stateAfterHappening, vector<Effect>& effects)
 {
     effects.clear();
     assert(stateAfterHappening->state.size() == stateBeforeHappening->state.size());
     for (int i = 0; i < stateAfterHappening->state.size(); ++i) {
         if (!(state_equals(stateBeforeHappening->state[i],
                         stateAfterHappening->state[i]))) {
-            effects.push_back(PrePost(i, stateAfterHappening->state[i]));
+            effects.push_back(Effect(i, stateAfterHappening->state[i]));
         }
     }
 }
@@ -350,14 +350,14 @@ void PartialOrderLifter::findAllEffectCondVars(const ScheduledOperator& new_op,
         set<int>& effect_cond_vars, ActionType type)
 {
     // FIXME: start_type -> start_conds, end_type -> end_conds, overall_conds??
-    const vector<PrePost>* pre_posts;
+    const vector<Effect>* pre_posts;
     if (type == start_action) {
-        pre_posts = &new_op.get_pre_post_start();
+        pre_posts = &new_op.get_effects_start();
     } else {
         assert(type == end_action);
-        pre_posts = &new_op.get_pre_post_end();
+        pre_posts = &new_op.get_effects_end();
     }
-    const vector<Prevail>* prevails;
+    const vector<Condition>* prevails;
     for (int i = 0; i < pre_posts->size(); ++i) {
         if (type == start_action) {
             prevails = &(*pre_posts)[i].cond_start;
@@ -372,24 +372,24 @@ void PartialOrderLifter::findAllEffectCondVars(const ScheduledOperator& new_op,
 }
 
 void PartialOrderLifter::findPreconditions(const ScheduledOperator& new_op,
-        vector<Prevail>& preconditions, ActionType type)
+        vector<Condition>& preconditions, ActionType type)
 {
     // FIXME: start_type -> start_conds, end_type -> end_conds, overall_conds??
-    const std::vector<Prevail> *prevails;
-    const std::vector<PrePost> *pre_posts;
+    const std::vector<Condition> *prevails;
+    const std::vector<Effect> *pre_posts;
     if (type == start_action) {
-        prevails = &new_op.get_prevail_start();
-        pre_posts = &new_op.get_pre_post_start();
+        prevails = &new_op.get_conditions_start();
+        pre_posts = &new_op.get_effects_start();
     } else {
-        prevails = &new_op.get_prevail_end();
-        pre_posts = &new_op.get_pre_post_end();
+        prevails = &new_op.get_conditions_end();
+        pre_posts = &new_op.get_effects_end();
     }
     for (size_t i = 0; i < prevails->size(); i++) {
         preconditions.push_back((*prevails)[i]);
     }
     for (int i = 0; i < pre_posts->size(); ++i) {
         if ((*pre_posts)[i].pre != -1) {
-            preconditions.push_back(Prevail((*pre_posts)[i].var,
+            preconditions.push_back(Condition((*pre_posts)[i].var,
                         (*pre_posts)[i].pre));
         }
     }
@@ -425,7 +425,7 @@ void PartialOrderLifter::buildInstantPlan()
     for (int i = 0; i < trace.size() - 1; ++i) {
         stateBeforeHappening = trace[i];
         // effects of dummy start instant is initial state
-        vector<PrePost> effects;
+        vector<Effect> effects;
         //        findTriggeringEffectsForInitialState(stateBeforeHappening,effects);
         //        instant_plan[0].effects = effects;
         stateAfterHappening = trace[i + 1];
@@ -448,7 +448,7 @@ void PartialOrderLifter::buildInstantPlan()
             double startTime = currentTimeStamp;
             double time_increment = new_op.time_increment;
             double endTime = startTime + time_increment;
-            vector<Prevail> preconditions;
+            vector<Condition> preconditions;
             findPreconditions(new_op, preconditions, start_action);
             set<int> effect_cond_vars;
             findAllEffectCondVars(new_op, effect_cond_vars, start_action);
@@ -460,7 +460,7 @@ void PartialOrderLifter::buildInstantPlan()
             instant_plan.back().effects = effects;
             instant_plan.back().effect_cond_vars = effect_cond_vars;
             instant_plan.back().preconditions = preconditions;
-            instant_plan.back().overall_conds = new_op.get_prevail_overall();
+            instant_plan.back().overall_conds = new_op.get_conditions_overall();
             instant_plan.back().correspondingPlanStep = getIndexOfPlanStep(
                     new_op, startTime);
             //            assert(instant_plan.size() >= 3);
@@ -481,7 +481,7 @@ void PartialOrderLifter::buildInstantPlan()
                 endPoints++;
                 instant_plan.push_back(InstantPlanStep(end_action, endTime, -1,
                             actionsEndingAtGivenTime[endTime][j]));
-                vector<Prevail> preconditions;
+                vector<Condition> preconditions;
                 findPreconditions((*actionsEndingAtGivenTime[endTime][j]),
                         preconditions, end_action);
                 set<int> effect_cond_vars;
@@ -491,7 +491,7 @@ void PartialOrderLifter::buildInstantPlan()
                 instant_plan.back().effect_cond_vars = effect_cond_vars;
                 instant_plan.back().preconditions = preconditions;
                 instant_plan.back().overall_conds
-                    = (*actionsEndingAtGivenTime[endTime][j]).get_prevail_overall();
+                    = (*actionsEndingAtGivenTime[endTime][j]).get_conditions_overall();
                 double time_increment =
                     actionsEndingAtGivenTime[endTime][j]->time_increment;
                 double startingTime = endTime - time_increment;

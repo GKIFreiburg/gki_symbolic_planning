@@ -11,7 +11,7 @@
 
 class TimeStampedState;
 
-struct Prevail;
+struct Condition;
 
 class Axiom
 {
@@ -22,7 +22,7 @@ class Axiom
 class LogicAxiom : public Axiom
 {
     public:
-        std::vector<Prevail> prevail; // var, val
+        std::vector<Condition> prevail; // var, val
         double old_value, new_value;
 
         LogicAxiom(std::istream &in);

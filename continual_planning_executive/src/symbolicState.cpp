@@ -404,17 +404,17 @@ void SymbolicState::setStringGoalStatement(string goalStatement)
     _directGoalStatement = goalStatement;
 }
 
-void SymbolicState::addFutureEvent(const FutureEvent::ConstPtr& event)
+void SymbolicState::addFutureEvent(FutureEvent::Ptr& event)
 {
   _expectedFutureEvents.insert(event);
 }
 
-void SymbolicState::removeFutureEvent(const FutureEvent::ConstPtr& event)
+void SymbolicState::removeFutureEvent(const FutureEvent::Ptr& event)
 {
   _expectedFutureEvents.erase(event);
 }
 
-void SymbolicState::applyTriggeredEvent(const FutureEvent::ConstPtr& event)
+void SymbolicState::applyTriggeredEvent(const FutureEvent::Ptr& event)
 {
   forEach (const PredicateBooleanMap::value_type& fluent, event->getBooleanFluents())
   {
@@ -432,8 +432,8 @@ void SymbolicState::applyTriggeredEvent(const FutureEvent::ConstPtr& event)
 
 void SymbolicState::updateFutureEvents()
 {
-  set<FutureEvent::ConstPtr> expired_events;
-  forEach (const FutureEvent::ConstPtr& event, _expectedFutureEvents)
+  set<FutureEvent::Ptr> expired_events;
+  forEach (const FutureEvent::Ptr& event, _expectedFutureEvents)
   {
     if (event->triggered())
     {
@@ -441,10 +441,11 @@ void SymbolicState::updateFutureEvents()
       expired_events.insert(event);
     }
   }
-  forEach (const FutureEvent::ConstPtr& event, expired_events)
+  forEach (const FutureEvent::Ptr& event, expired_events)
   {
     removeFutureEvent(event);
   }
+  ROS_INFO_STREAM(expired_events.size()<<" events expired and been applied. "<<_expectedFutureEvents.size() <<" events remain.");
 }
 
 bool SymbolicState::hasBooleanPredicate(const Predicate & p, bool* value) const

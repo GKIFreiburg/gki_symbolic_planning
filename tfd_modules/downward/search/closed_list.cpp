@@ -43,7 +43,7 @@ std::size_t TssHash::operator()(const TimeStampedState &tss) const
     return ret;
 }
 
-bool prevailEquals(const Prevail &prev1, const Prevail &prev2)
+bool prevailEquals(const Condition &prev1, const Condition &prev2)
 {
     if(prev1.var != prev2.var)
         return false;

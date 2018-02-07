@@ -38,14 +38,15 @@ void FutureEvent::setNumericalFluent(const Predicate& p, double value)
 	numerical_fluents[p] = value;
 }
 
-bool FutureEvent::triggered() const
+bool FutureEvent::triggered()
 {
-	return time < ros::Time::now();
+	now = ros::Time::now();
+	return time < now;
 }
 
 double FutureEvent::getTriggerTime() const
 {
-	return (time - ros::Time::now()).toSec();
+	return (time - now).toSec();
 }
 
 void FutureEvent::toPDDL(std::ostream & os) const

@@ -39,10 +39,11 @@ public:
 	 */
 	void setTriggerTime(double time)
 	{
-		this->time = ros::Time::now() + ros::Duration(time);
+		now = ros::Time::now();
+		this->time = now + ros::Duration(time);
 	}
+	bool triggered();
 	double getTriggerTime() const;
-	bool triggered() const;
 	
 	void toPDDL(std::ostream & os) const;
 	const PredicateBooleanMap& getBooleanFluents() const;
@@ -51,6 +52,7 @@ public:
 
 private:
 	ros::Time time;
+	ros::Time now;
 	PredicateBooleanMap boolean_fluents;
 	PredicateDoubleMap numerical_fluents;
 	PredicateStringMap object_fluents;

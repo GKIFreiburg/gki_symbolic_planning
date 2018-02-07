@@ -37,6 +37,8 @@ double save_plan(BestFirstSearchEngine& engine, double best_makespan, int &plan_
 std::string getTimesName(const string & plan_name);    ///< returns the file name of the .times file for plan_name
 double getCurrentTime();            ///< returns the system time in seconds
 
+std::string action_format;
+
 int main(int argc, char **argv)
 {
 #if ROS_BUILD
@@ -44,6 +46,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 #endif
 
+    action_format = "%010.5f: (%s) [%.5f]\n";
     ifstream file("../preprocess/output");
     if(strcmp(argv[argc - 1], "-eclipserun") == 0) {
         cin.rdbuf(file.rdbuf());
@@ -395,7 +398,7 @@ double save_plan(BestFirstSearchEngine& engine, double best_makespan, int &plan_
         const PlanStep& step = plan[i];
         if (step.op->get_name().find(timed_initial_key) == std::string::npos)
         {
-            printf("%.8f: (%s) [%.8f]\n", step.start_time, step.op->get_name().c_str(), step.duration);
+            printf(action_format.c_str(), step.start_time, step.op->get_name().c_str(), step.duration);
         }
     }
     if(g_parameters.reschedule_plans) {
@@ -404,7 +407,7 @@ double save_plan(BestFirstSearchEngine& engine, double best_makespan, int &plan_
             const PlanStep& step = rescheduled_plan[i];
             if (step.op->get_name().find(timed_initial_key) == std::string::npos)
             {
-                printf("%.8f: (%s) [%.8f]\n", step.start_time, step.op->get_name().c_str(), step.duration);
+                printf(action_format.c_str(), step.start_time, step.op->get_name().c_str(), step.duration);
             }
         }
     }
@@ -463,9 +466,9 @@ double save_plan(BestFirstSearchEngine& engine, double best_makespan, int &plan_
     plan_number++;
     for(int i = 0; i < rescheduled_plan.size(); i++) {
         const PlanStep& step = rescheduled_plan[i];
-        fprintf(file, "%.8f: (%s) [%.8f]\n", step.start_time, step.op->get_name().c_str(), step.duration);
+        fprintf(file, action_format.c_str(), step.start_time, step.op->get_name().c_str(), step.duration);
         if (best_file) {
-            fprintf(best_file, "%.8f: (%s) [%.8f]\n", 
+            fprintf(best_file, action_format.c_str(),
                 step.start_time, step.op->get_name().c_str(), step.duration);
         }
     }
