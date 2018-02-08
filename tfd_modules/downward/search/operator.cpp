@@ -171,7 +171,7 @@ Operator::Operator(istream &in) : grounding_parent(NULL)
 
     numBranches = 0;
 
-    dump();
+    //dump();
 }
 
 Operator::Operator(bool uses_concrete_time_information) : grounding_parent(NULL)
